@@ -7,6 +7,9 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '../api';
 import ProductCard from '../components/ProductCard';
+import FlashSale from '../components/FlashSale';
+import CategoryGrid from '../components/CategoryGrid';
+import Recommended from '../components/Recommended';
 
 const fade = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } };
@@ -38,6 +41,13 @@ const features: [LucideIcon, string, string][] = [
   [Truck, 'Fair delivery fees', 'Priced by distance, and free on bigger baskets.'],
   [RotateCcw, '7-day refunds', 'Request a refund in a tap and get it back on M-Pesa.'],
 ];
+
+<section className="mx-auto max-w-6xl px-4 pb-4">
+  <h2 className="mb-5 text-3xl font-extrabold tracking-tight">Shop by category</h2>
+  <CategoryGrid limit={6} />
+</section>
+
+
 const words: [string, string][] = [['Shop', ''], ['smart.', ''], ['Pay', ''], ['with', ''], ['M-Pesa.', ''], ['Delivered', 'bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent'], ['fast.', 'bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent']];
 
 export default function Landing() {

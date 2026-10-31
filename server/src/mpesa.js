@@ -20,24 +20,25 @@ export const normPhone = p => {
   return null;
 };
 
-export async function stkPush(phone, amount, orderId) {
+// till=true -> Buy Goods (PartyB is the till number); otherwise Paybill
+export async function stkPush(phone, amount, orderId, till = false) {
   const ts = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
   const sc = process.env.MPESA_SHORTCODE;
   const { data } = await axios.post(base() + '/mpesa/stkpush/v1/processrequest', {
     BusinessShortCode: sc, Password: Buffer.from(sc + process.env.MPESA_PASSKEY + ts).toString('base64'),
-    Timestamp: ts, TransactionType: 'CustomerPayBillOnline', Amount: amount,
-    PartyA: phone, PartyB: sc, PhoneNumber: phone, CallBackURL: cb('/payments/mpesa/callback'),
-    AccountReference: `ORD${orderId}`, TransactionDesc: `Order ${orderId}`,
+    Timestamp: ts, TransactionType: till ? 'CustomerBuyGoodsOnline' : 'CustomerPayBillOnline', Amount: amount,
+    PartyA: phone, PartyB: till ? process.env.MPESA_TILL : sc, PhoneNumber: phone,
+    CallBackURL: cb('/payments/mpesa/callback'), AccountReference: `ORD${orderId}`, TransactionDesc: `Order ${orderId}`,
   }, { headers: await headers() });
   return data;
 }
 
-// Full reversal of a customer payment (Daraja Transaction Reversal API)
-export async function reverse(receipt, amount, orderId) {
+export async function reverse(receipt, amount, orderId, till = false) {
   const { data } = await axios.post(base() + '/mpesa/reversal/v1/request', {
     Initiator: process.env.MPESA_INITIATOR, SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL,
     CommandID: 'TransactionReversal', TransactionID: receipt, Amount: amount,
-    ReceiverParty: process.env.MPESA_SHORTCODE, RecieverIdentifierType: '11', // (sic) Daraja's spelling
+    ReceiverParty: till ? process.env.MPESA_TILL : process.env.MPESA_SHORTCODE,
+    RecieverIdentifierType: till ? '2' : '11', // (sic) Daraja's spelling; till value unverified
     ResultURL: cb('/refunds/mpesa/result'), QueueTimeOutURL: cb('/refunds/mpesa/timeout'),
     Remarks: `Refund order ${orderId}`, Occasion: `ORD${orderId}`,
   }, { headers: await headers() });

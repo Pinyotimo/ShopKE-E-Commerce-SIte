@@ -15,4 +15,8 @@ r.post('/read', async (req, res) => {
   await q('UPDATE notifications SET read=true WHERE user_id=$1 AND read=false', [req.user.id]);
   res.json({ ok: true });
 });
+
+export const track = (orderId, status, note = '') =>
+  q('INSERT INTO order_events(order_id,status,note) VALUES($1,$2,$3)', [orderId, status, note]).catch(console.error);
+
 export default r;

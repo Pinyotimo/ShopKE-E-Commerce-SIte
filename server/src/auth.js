@@ -9,6 +9,11 @@ export const auth = (req, res, next) => {
   try { req.user = jwt.verify((req.headers.authorization || '').slice(7), process.env.JWT_SECRET); next(); }
   catch { res.status(401).json({ error: 'Login required' }); }
 };
+// Optional login: sets req.user if a valid token is sent, never blocks
+export const soft = (req, res, next) => {
+  try { req.user = jwt.verify((req.headers.authorization || '').slice(7), process.env.JWT_SECRET); } catch {}
+  next();
+};
 // Role is re-read from the DB so demotions take effect immediately
 const need = roles => async (req, res, next) => {
   const [u] = await q('SELECT role FROM users WHERE id=$1', [req.user.id]);

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { q } from '../db.js';
 import { auth, admin } from '../auth.js';
 import { reverse } from '../mpesa.js';
+import * as ps from '../paystack.js';
 import { notify } from '../notify.js';
 const r = Router();
 r.use(auth, admin);
@@ -15,10 +16,13 @@ r.get('/analytics', async (req, res) => {
       (SELECT COUNT(*) FROM users WHERE role='customer')::int customers,
       (SELECT COUNT(*) FROM products WHERE active AND stock<=5)::int low_stock
     FROM orders`);
-  const daily = await q(`SELECT to_char(d,'DD Mon') day, COALESCE(SUM(o.total),0)::int revenue, COUNT(o.id)::int orders
-    FROM generate_series(current_date-29, current_date, interval '1 day') d
-    LEFT JOIN orders o ON o.created_at::date = d::date AND o.${OK}
-    GROUP BY d ORDER BY d`);
+ 
+
+    const daily = await q(`SELECT to_char(d,'DD Mon') AS day, COALESCE(SUM(o.total),0)::int AS revenue, COUNT(o.id)::int AS orders
+  FROM generate_series((current_date-29)::timestamp, current_date::timestamp, interval '1 day') d
+  LEFT JOIN orders o ON o.created_at::date = d::date AND o.${OK}
+  GROUP BY d ORDER BY d`);
+  
   const status = await q('SELECT status, COUNT(*)::int n FROM orders GROUP BY status ORDER BY n DESC');
   const top = await q(`SELECT i.name, SUM(i.qty)::int units, SUM(i.qty*i.price)::int revenue
     FROM order_items i JOIN orders o ON o.id=i.order_id WHERE o.${OK}
@@ -38,13 +42,16 @@ r.post('/refunds/:id/approve', async (req, res) => {
   const [p] = await q('SELECT * FROM payments WHERE id=$1', [f.payment_id]);
   const [o] = await q('SELECT user_id FROM orders WHERE id=$1', [f.order_id]);
   try {
-    const d = await reverse(p.mpesa_receipt, f.amount, f.order_id);
-    await q('UPDATE refunds SET conversation_id=$2 WHERE id=$1', [f.id, d.ConversationID]);
-    notify(o.user_id, 'Refund approved', `Order #${f.order_id}: reversal is being processed`, '/orders');
+    if (['card', 'paystack'].includes(p.method)) await ps.refund(p.reference, f.amount); // webhook finishes it
+    else {
+      const d = await reverse(p.mpesa_receipt, f.amount, f.order_id, p.method === 'till');
+      await q('UPDATE refunds SET conversation_id=$2 WHERE id=$1', [f.id, d.ConversationID]);
+    }
+    notify(o.user_id, 'Refund approved', `Order #${f.order_id}: refund is being processed`, `/order/${f.order_id}`);
     res.json({ ok: true });
   } catch (e) {
     await q(`UPDATE refunds SET status='failed' WHERE id=$1`, [f.id]);
-    res.status(502).json({ error: 'Reversal failed', detail: e.response?.data });
+    res.status(502).json({ error: 'Refund failed', detail: e.response?.data });
   }
 });
 
@@ -66,4 +73,5 @@ r.patch('/users/:id/role', async (req, res) => {
   notify(u.id, 'Your role changed', `You are now: ${u.role}`, u.role === 'staff' ? '/staff' : '/');
   res.json(u);
 });
+
 export default r;

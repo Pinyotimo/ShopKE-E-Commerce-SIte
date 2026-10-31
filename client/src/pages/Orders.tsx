@@ -13,6 +13,7 @@ import { api, kes } from '../api';
 import { Empty, Page, Status, Title } from '../ui';
 
 const STEPS = [['paid', CreditCard], ['packed', Package], ['out_for_delivery', Truck], ['delivered', CheckCircle2]] as const;
+
 function Track({ s }: { s: string }) {
   const i = STEPS.findIndex(x => x[0] === s);
   if (i < 0) return null;
@@ -56,7 +57,10 @@ export default function Orders() {
               <Card className="gap-0 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div><b>Order #{o.id}</b><span className="ml-2 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
-                  <Status s={o.status} />
+                  <div className="flex items-center gap-2">
+                    <Link to={`/order/${o.id}`} className="text-sm font-semibold text-emerald-700 hover:underline">{o.status === 'pending' ? 'Pay now' : 'Track'}</Link>
+                    <Status s={o.status} />
+                  </div>
                 </div>
                 <Track s={o.status} />
                 <ul className="mb-3 space-y-1 text-sm text-muted-foreground">{o.items?.map((i: any, n: number) => <li key={n} className="flex justify-between"><span>{i.name} × {i.qty}</span><span>{kes(i.price * i.qty)}</span></li>)}</ul>
