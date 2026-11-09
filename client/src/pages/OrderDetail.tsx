@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, MapPin, XCircle } from 'lucide-react';
+import { AlertTriangle, MapPin, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api, kes } from '../api';
 import PayPanel, { METHODS } from '../components/PayPanel';
 import { Events, Stepper } from '../components/Timeline';
 import { Page, Status, Title } from '../ui';
+import CurrencyTransfer, { type TransferStatus } from '@/components/kokonutui/currency-transfer';
+import ReceiptPrinter, { type ReceiptItem } from '@/components/kokonutui/receipt-printer';
+
+const SHOP = 'ShopKE';
+const when = (iso?: string) => (iso ? new Date(iso) : new Date());
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -16,12 +21,20 @@ export default function OrderDetail() {
   const auto = useRef<string | undefined>((loc.state as any)?.autoPay);
   const [o, setO] = useState<any>(null);
   const [err, setErr] = useState('');
+  // Returning from Paystack: 'verifying' until the API answers, 'failed' if the order is still unpaid.
+  const [payFlow, setPayFlow] = useState<'verifying' | 'failed' | null>(sp.get('reference') ? 'verifying' : null);
   const load = () => api('/orders/' + id).then(setO).catch(e => setErr(e.message));
 
   useEffect(() => {
     if (auto.current) nav(loc.pathname + loc.search, { replace: true, state: null }); // no re-pay on refresh
     const ref = sp.get('reference'); // returning from Paystack
-    (async () => { if (ref) await api('/payments/paystack/verify', { method: 'POST', body: { reference: ref } }).catch(() => {}); load(); })();
+    (async () => {
+      if (ref) {
+        const r = await api('/payments/paystack/verify', { method: 'POST', body: { reference: ref } }).catch(() => null);
+        setPayFlow(r && r.order !== 'pending' ? null : 'failed');
+      }
+      load();
+    })();
     const t = setInterval(load, 8000);
     return () => clearInterval(t);
   }, [id]);
@@ -30,13 +43,42 @@ export default function OrderDetail() {
   if (!o) return <Page><Skeleton className="h-64 rounded-2xl" /></Page>;
   const review = o.payment?.status === 'review';
   const paid = !['pending', 'cancelled'].includes(o.status);
+  const confirmed = paid && o.payment?.status === 'paid';
+
+  // Payment progress card: shown while a payment is being checked, and once it is confirmed.
+  let payStatus: TransferStatus | null = null;
+  if (confirmed) payStatus = 'completed';
+  else if (review || (payFlow === 'verifying' && o.status === 'pending')) payStatus = 'processing';
+  else if (payFlow === 'failed' && o.status === 'pending') payStatus = 'failed';
+  const methodLabel = METHODS.find(m => m[0] === o.payment?.method)?.[2] || (o.payment?.method ?? 'Paystack');
+  const paidAt = o.events?.find((e: any) => e.status === 'paid')?.at;
+  const retryPayment = () => { setPayFlow(null); nav(loc.pathname, { replace: true }); };
+
+  const receiptItems: ReceiptItem[] = [
+    ...(o.items ?? []).map((i: any) => ({ name: i.name, quantity: i.qty, price: i.price })),
+    { name: 'Delivery', quantity: 1, price: o.delivery_fee || 0 },
+    ...(o.discount > 0 ? [{ name: `Discount${o.coupon_code ? ` (${o.coupon_code})` : ''}`, quantity: 1, price: -o.discount }] : []),
+  ];
 
   return (
     <Page>
       <Title action={<Status s={o.status} />}>Order #{o.id}</Title>
       <div className="grid items-start gap-5 md:grid-cols-[1fr_340px]">
         <div className="space-y-5">
-          {o.status === 'pending' && !review && (
+          {payStatus && (
+            <CurrencyTransfer
+              className="mx-0 max-w-none"
+              status={payStatus}
+              locale="en-KE"
+              from={{ amount: o.total, currency: 'KES', symbol: 'KES ', bank: methodLabel, last4: o.phone?.slice(-4) }}
+              to={{ amount: o.total, currency: 'KES', symbol: 'KES ', bank: `Order #${o.id}`, name: SHOP }}
+              rate={1}
+              txnId={o.payment?.receipt || sp.get('reference') || `ORDER-${o.id}`}
+              timestamp={when(paidAt).toLocaleTimeString('en-KE', { hour: 'numeric', minute: '2-digit' })}
+              onRetry={retryPayment}
+            />
+          )}
+          {o.status === 'pending' && !review && payStatus !== 'processing' && (
             <Card className="gap-3 p-5"><h2 className="font-bold">Pay for this order</h2>
               <p className="text-sm text-muted-foreground">Unpaid orders are released after 30 minutes.</p>
               <PayPanel order={o} initial={auto.current} autoStart={!!auto.current} onPaid={load} /></Card>
@@ -48,11 +90,6 @@ export default function OrderDetail() {
           {o.status === 'cancelled' && (
             <Card className="flex-row gap-3 p-5"><XCircle className="h-5 w-5 shrink-0 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">This order expired. Paid and it still shows here? We will match it automatically or refund you. <Link to="/contact" className="underline">Contact us</Link>.</p></Card>
-          )}
-          {paid && o.payment?.status === 'paid' && (
-            <Card className="flex-row gap-3 border-emerald-300 bg-emerald-50 p-5 text-emerald-900"><CheckCircle2 className="h-5 w-5 shrink-0" />
-              <div className="text-sm"><p className="font-semibold">Payment confirmed</p>
-                <p>{METHODS.find(m => m[0] === o.payment.method)?.[2] || o.payment.method} · Ref {o.payment.receipt}</p></div></Card>
           )}
           <Card className="gap-0 p-5">
             <h2 className="mb-1 font-bold">Tracking</h2>
@@ -72,6 +109,20 @@ export default function OrderDetail() {
           <p className="flex items-start gap-1.5 text-xs text-muted-foreground"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />{o.address}</p>
           <Link to="/orders" className="text-sm text-muted-foreground hover:underline">All my orders</Link>
         </Card>
+        {confirmed && (
+          <div className="md:col-start-2">
+            <p className="mb-2 text-center text-xs text-muted-foreground">Your receipt. Pull it down to tear it off.</p>
+            <ReceiptPrinter
+              className="mx-auto"
+              merchant={SHOP}
+              order={`#${o.id}`}
+              date={when(paidAt || o.created_at).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}
+              items={receiptItems}
+              tax={0}
+              currency="KES "
+            />
+          </div>
+        )}
       </div>
     </Page>
   );

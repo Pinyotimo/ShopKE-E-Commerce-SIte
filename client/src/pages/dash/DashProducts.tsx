@@ -15,7 +15,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { api, kes } from '../../api';
 import { Empty, Spinner, Title } from '../../ui';
 
-const blank = { name: '', description: '', price: '', stock: '', category: '', image_url: '', sale_price: '', sale_ends_at: '' };
+const blank = { name: '', description: '', price: '', stock: '', category: '', photos: '', sale_price: '', sale_ends_at: '' };
+// One photo URL per line; the first is the cover.
+const photoList = (text: string) => text.split(/\s+/).map(x => x.trim()).filter(x => /^https?:\/\//i.test(x));
 
 export default function DashProducts() {
   const [ps, setPs] = useState<any[] | null>(null);
@@ -39,7 +41,7 @@ export default function DashProducts() {
       price: String(p.price), 
       stock: String(p.stock), 
       category: p.category || '', 
-      image_url: p.image_url || '',
+      photos: (p.images?.length ? p.images : p.image_url ? [p.image_url] : []).join('\n'),
       sale_price: p.sale_price ? String(p.sale_price) : '',
       sale_ends_at: p.sale_ends_at ? new Date(p.sale_ends_at).toLocaleString('sv').replace(' ', 'T').slice(0, 16) : ''
     } : blank);
@@ -52,7 +54,9 @@ export default function DashProducts() {
       await api(edit ? `/staff/products/${edit.id}` : '/staff/products', { 
         method: edit ? 'PATCH' : 'POST', 
         body: { 
-          ...f, 
+          ...f,
+          photos: undefined,
+          images: photoList(f.photos), 
           price: +f.price, 
           stock: +f.stock,
           sale_price: f.sale_price === '' ? null : +f.sale_price,
@@ -116,14 +120,26 @@ export default function DashProducts() {
               <div className="space-y-1.5"><Label>Stock</Label><Input type="number" min={0} value={f.stock} onChange={set('stock')} /></div>
               <div className="space-y-1.5"><Label>Category</Label><Input list="cats" value={f.category} onChange={set('category')} /><datalist id="cats">{cats.map(c => <option key={c} value={c} />)}</datalist></div>
             </div>
-            <div className="space-y-1.5"><Label>Image URL</Label><Input placeholder="https://…" value={f.image_url} onChange={set('image_url')} /></div>
+            <div className="space-y-1.5">
+              <Label>Photos <span className="font-normal text-muted-foreground">(one link per line, first is the cover, up to 10)</span></Label>
+              <Textarea rows={3} placeholder={'https://…/front.jpg\nhttps://…/side.jpg'} value={f.photos} onChange={set('photos')} />
+            </div>
             
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5"><Label>Sale price (optional)</Label><Input type="number" min={1} value={f.sale_price} onChange={set('sale_price')} /></div>
               <div className="space-y-1.5"><Label>Flash sale ends</Label><Input type="datetime-local" value={f.sale_ends_at} onChange={set('sale_ends_at')} /></div>
             </div>
 
-            {f.image_url && <img src={f.image_url} alt="" className="h-28 w-28 rounded-xl border object-cover" />}
+            {photoList(f.photos).length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {photoList(f.photos).slice(0, 10).map((src, i) => (
+                  <div key={src + i} className="relative shrink-0">
+                    <img src={src} alt="" className="h-20 w-20 rounded-xl border object-cover" />
+                    {i === 0 && <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 text-[10px] font-semibold text-white">Cover</span>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <DialogFooter><Button disabled={busy || !f.name || !(+f.price > 0)} onClick={save}>{busy ? <Spinner /> : edit ? 'Save changes' : 'Add product'}</Button></DialogFooter>
         </DialogContent>

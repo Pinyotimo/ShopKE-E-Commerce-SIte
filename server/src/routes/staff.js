@@ -30,6 +30,11 @@ const clean = b => {
   if (b.price !== undefined) { o.price = Math.round(+b.price); if (!(o.price > 0)) return null; }
   if (b.stock !== undefined) { o.stock = Math.floor(+b.stock); if (!(o.stock >= 0)) return null; }
   if (b.image_url !== undefined) o.image_url = String(b.image_url).trim() || null;
+  // Gallery: array (or whitespace-separated string) of http(s) URLs, max 10. images[1] becomes the cover.
+  if (b.images !== undefined) {
+    const list = Array.isArray(b.images) ? b.images : String(b.images).split(/\s+/);
+    o.images = list.map(x => String(x).trim()).filter(x => /^https?:\/\//i.test(x)).slice(0, 10);
+  }
   if (b.category !== undefined) o.category = String(b.category).trim() || 'General';
   if (b.active !== undefined) o.active = !!b.active;
   if (b.sale_price !== undefined) {

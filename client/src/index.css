@@ -5,75 +5,119 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
-  --brand: #059669;
-  --accent2: #0d9488;
-  --tint: #ffffff;
-  --on: #000000;
+/* =====================================================================
+   THEMES
+   <html data-theme="ocean" class="dark"> picks a palette and a mode.
+   theme.tsx (and the inline script in index.html, before first paint)
+   sets both. Each palette has a light and a dark pair:
+     --brand   main colour: buttons, links, active states
+     --accent2 second colour: gradients, highlights
+   Dark pairs are lighter so they stay readable on dark surfaces.
+   Swatch colours in theme.tsx (THEMES) mirror the light values.
+   ===================================================================== */
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+:root,
+[data-theme="emerald"] { --brand-l: #064e3b; --accent-l: #14b8a6; --brand-d: #059669; --accent-d: #2dd4bf; }
+[data-theme="ocean"]   { --brand-l: #2563eb; --accent-l: #0891b2; --brand-d: #3b82f6; --accent-d: #22d3ee; }
+[data-theme="violet"]  { --brand-l: #7c3aed; --accent-l: #c026d3; --brand-d: #8b5cf6; --accent-d: #e879f9; }
+[data-theme="rose"]    { --brand-l: #e11d48; --accent-l: #f97316; --brand-d: #f43f5e; --accent-d: #fb923c; }
+[data-theme="sunset"]  { --brand-l: #ea580c; --accent-l: #d97706; --brand-d: #f97316; --accent-d: #fbbf24; }
+[data-theme="slate"]   { --brand-l: #334155; --accent-l: #64748b; --brand-d: #64748b; --accent-d: #94a3b8; }
+
+/* ---------- Light mode (default) ---------- */
+:root {
+  --brand: var(--brand-l);
+  --accent2: var(--accent-l);
+
+  /* Mix targets for the remapped emerald/teal scales (see @theme below):
+     --tint  for the light end (50-500), the page's base surface
+     --ink   for 700-800 (text shades)
+     --deep  for 900-950 (dark backgrounds) */
+  --tint: #fdfbf7;
+  --ink: #0f172a;
+  --deep: #0f172a;
+  /* Legacy alias kept for older styles. */
+  --on: var(--ink);
+
+  --background: oklch(0.985 0.006 85);
+  --foreground: oklch(0.17 0.01 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: var(--foreground);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --popover-foreground: var(--foreground);
   --primary: var(--brand);
   --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.955 0.012 85);
+  --secondary-foreground: oklch(0.22 0.01 260);
+  --muted: oklch(0.955 0.012 85);
+  --muted-foreground: oklch(0.52 0.015 260);
+  --accent: color-mix(in oklab, var(--brand) 8%, var(--tint));
+  --accent-foreground: oklch(0.22 0.01 260);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: oklch(0.915 0.006 85);
+  --input: oklch(0.905 0.006 85);
   --ring: var(--brand);
-  --radius: 0.75rem;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --radius: 1rem;
+
+  --sidebar: oklch(0.99 0.004 85);
+  --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--brand);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent: color-mix(in oklab, var(--brand) 8%, var(--tint));
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
   --sidebar-ring: var(--brand);
 }
 
+/* ---------- Dark mode ---------- */
+/* Surfaces carry a faint tint of the brand so each palette feels distinct. */
 .dark {
-  --tint: #0b1210;
-  --on: #ffffff;
+  --brand: var(--brand-d);
+  --accent2: var(--accent-d);
 
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --tint: color-mix(in oklab, var(--brand) 6%, oklch(0.19 0.004 260));
+  --ink: #ffffff;
+  --deep: #000000;
+
+  --background: color-mix(in oklab, var(--brand) 4%, oklch(0.155 0.004 260));
+  --foreground: oklch(0.97 0.004 260);
+  --card: color-mix(in oklab, var(--brand) 5%, oklch(0.2 0.004 260));
+  --card-foreground: var(--foreground);
+  --popover: color-mix(in oklab, var(--brand) 5%, oklch(0.215 0.004 260));
+  --popover-foreground: var(--foreground);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in oklab, var(--brand) 6%, oklch(0.27 0.004 260));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in oklab, var(--brand) 6%, oklch(0.26 0.004 260));
+  --muted-foreground: oklch(0.72 0.01 260);
+  --accent: color-mix(in oklab, var(--brand) 16%, oklch(0.24 0.004 260));
+  --accent-foreground: var(--foreground);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
+
+  --sidebar: var(--card);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
 }
 
+/* ---------- Charts: follow the palette in both modes ---------- */
+:root {
+  --chart-1: var(--brand);
+  --chart-2: var(--accent2);
+  --chart-3: color-mix(in oklab, var(--brand) 50%, var(--accent2));
+  --chart-4: color-mix(in oklab, var(--brand) 55%, var(--tint));
+  --chart-5: color-mix(in oklab, var(--accent2) 55%, var(--tint));
+}
+
+/* =====================================================================
+   Tailwind tokens
+   ===================================================================== */
 @theme inline {
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -105,6 +149,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Theme colours as utilities: bg-brand, text-accent2, ... */
+  --color-brand: var(--brand);
+  --color-accent2: var(--accent2);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -113,28 +162,77 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* theme remap: existing emerald/teal classes follow the chosen color */
-  --color-emerald-50: color-mix(in oklab, var(--brand) 8%, var(--tint));
+  /* The app's emerald-* and teal-* classes follow the chosen palette.
+     50-500 fade toward the surface; 600 is the colour itself;
+     700-800 head toward text ink (darker in light mode, lighter in dark);
+     900-950 head toward deep (always dark, for dark panels like the CTA). */
+  --color-emerald-50:  color-mix(in oklab, var(--brand) 8%,  var(--tint));
   --color-emerald-100: color-mix(in oklab, var(--brand) 16%, var(--tint));
-  --color-emerald-200: color-mix(in oklab, var(--brand) 32%, var(--tint));
-  --color-emerald-300: color-mix(in oklab, var(--brand) 52%, var(--tint));
-  --color-emerald-400: color-mix(in oklab, var(--brand) 74%, var(--tint));
-  --color-emerald-500: color-mix(in oklab, var(--brand) 90%, var(--tint));
+  --color-emerald-200: color-mix(in oklab, var(--brand) 30%, var(--tint));
+  --color-emerald-300: color-mix(in oklab, var(--brand) 48%, var(--tint));
+  --color-emerald-400: color-mix(in oklab, var(--brand) 68%, var(--tint));
+  --color-emerald-500: color-mix(in oklab, var(--brand) 86%, var(--tint));
   --color-emerald-600: var(--brand);
-  --color-emerald-700: color-mix(in oklab, var(--brand) 82%, var(--on));
-  --color-teal-50: color-mix(in oklab, var(--accent2) 8%, var(--tint));
-  --color-teal-300: color-mix(in oklab, var(--accent2) 52%, var(--tint));
-  --color-teal-400: color-mix(in oklab, var(--accent2) 74%, var(--tint));
-  --color-teal-500: color-mix(in oklab, var(--accent2) 90%, var(--tint));
+  --color-emerald-700: color-mix(in oklab, var(--brand) 80%, var(--ink));
+  --color-emerald-800: color-mix(in oklab, var(--brand) 64%, var(--ink));
+  --color-emerald-900: color-mix(in oklab, var(--brand) 55%, var(--deep));
+  --color-emerald-950: color-mix(in oklab, var(--brand) 35%, var(--deep));
+
+  --color-teal-50:  color-mix(in oklab, var(--accent2) 8%,  var(--tint));
+  --color-teal-100: color-mix(in oklab, var(--accent2) 16%, var(--tint));
+  --color-teal-200: color-mix(in oklab, var(--accent2) 30%, var(--tint));
+  --color-teal-300: color-mix(in oklab, var(--accent2) 48%, var(--tint));
+  --color-teal-400: color-mix(in oklab, var(--accent2) 68%, var(--tint));
+  --color-teal-500: color-mix(in oklab, var(--accent2) 86%, var(--tint));
   --color-teal-600: var(--accent2);
-  --color-teal-700: color-mix(in oklab, var(--accent2) 82%, var(--on));
+  --color-teal-700: color-mix(in oklab, var(--accent2) 80%, var(--ink));
+  --color-teal-800: color-mix(in oklab, var(--accent2) 55%, var(--deep));
+  --color-teal-900: color-mix(in oklab, var(--accent2) 45%, var(--deep));
+  --color-teal-950: color-mix(in oklab, var(--accent2) 30%, var(--deep));
 }
 
+/* =====================================================================
+   Base
+   ===================================================================== */
 @layer base {
   * { @apply border-border outline-ring/50; }
+  html { @apply font-sans; -webkit-tap-highlight-color: transparent; }
   body { @apply bg-background text-foreground antialiased; }
-  html { @apply font-sans; }
+  ::selection { background: color-mix(in oklab, var(--brand) 25%, transparent); }
+  :focus-visible { outline-color: var(--ring); }
 }
 
+/* Smooth palette changes; disabled while a view transition runs
+   (the dark-mode switch has its own reveal) and for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-animating,
+  html.theme-animating *,
+  html.theme-animating *::before,
+  html.theme-animating *::after {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, fill 0.3s ease, stroke 0.3s ease !important;
+  }
+}
+
+/* =====================================================================
+   Utilities
+   ===================================================================== */
 @keyframes marquee { to { transform: translateX(-50%); } }
 .animate-marquee { animation: marquee 30s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .animate-marquee { animation: none; } }
+
+/* Leaflet sits under the sticky header and dialogs. */
+.leaflet-container { font: inherit; z-index: 0; }
+.dark .leaflet-tile-pane { filter: brightness(0.85) contrast(1.05) saturate(0.85); }
+
+/* Recharts: grid, axes and tooltip follow the theme (CSS beats the SVG attributes). */
+.recharts-cartesian-grid line { stroke: var(--border); }
+.recharts-cartesian-axis-line, .recharts-cartesian-axis-tick-line { stroke: var(--border); }
+.recharts-default-tooltip {
+  background: var(--popover) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: calc(var(--radius) * 0.8);
+  color: var(--popover-foreground);
+  box-shadow: 0 8px 24px -12px rgb(0 0 0 / 0.25);
+}
+.recharts-default-tooltip .recharts-tooltip-label { color: var(--muted-foreground); }
+.recharts-legend-item-text { color: var(--foreground) !important; }

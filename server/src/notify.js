@@ -10,9 +10,21 @@ export const notifyRole = (roles, title, body = '', link = null) =>
 
 const r = Router();
 r.use(auth);
-r.get('/', async (req, res) => res.json(await q('SELECT * FROM notifications WHERE user_id=$1 ORDER BY id DESC LIMIT 30', [req.user.id])));
+// ?limit=N (1-200, default 30) so the notifications page can show more history than the bell
+r.get('/', async (req, res) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 30, 1), 200);
+  res.json(await q('SELECT * FROM notifications WHERE user_id=$1 ORDER BY id DESC LIMIT $2', [req.user.id, limit]));
+});
 r.post('/read', async (req, res) => {
   await q('UPDATE notifications SET read=true WHERE user_id=$1 AND read=false', [req.user.id]);
+  res.json({ ok: true });
+});
+r.delete('/:id', async (req, res) => {
+  await q('DELETE FROM notifications WHERE id=$1 AND user_id=$2', [+req.params.id || 0, req.user.id]);
+  res.json({ ok: true });
+});
+r.delete('/', async (req, res) => {
+  await q('DELETE FROM notifications WHERE user_id=$1', [req.user.id]);
   res.json({ ok: true });
 });
 

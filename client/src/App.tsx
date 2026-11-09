@@ -13,6 +13,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import Notifications from './pages/Notifications';
 import TrackOrder from './pages/TrackOrder';
 import Info from './pages/Info';
 import NotFound from './pages/NotFound';
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/checkout" element={<Guard><Checkout /></Guard>} />
           <Route path="/orders" element={<Guard><Orders /></Guard>} />
           <Route path="/order/:id" element={<Guard><OrderDetail /></Guard>} />
+          <Route path="/notifications" element={<Guard><Notifications /></Guard>} />
           <Route path="/track" element={<TrackOrder />} />
           {(['about', 'faq', 'delivery', 'returns', 'contact'] as const).map(k => <Route key={k} path={'/' + k} element={<Info page={k} />} />)}
           <Route path="*" element={<NotFound />} />

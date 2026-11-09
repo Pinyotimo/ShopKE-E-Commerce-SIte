@@ -30,7 +30,14 @@ r.get('/analytics', async (req, res) => {
   const category = await q(`SELECT COALESCE(p.category,'Other') category, SUM(i.qty*i.price)::int revenue
     FROM order_items i JOIN orders o ON o.id=i.order_id LEFT JOIN products p ON p.id=i.product_id WHERE o.${OK}
     GROUP BY 1 ORDER BY revenue DESC`);
-  res.json({ totals, daily, status, top, category });
+  // Last 12 months: units sold and item sales (KES), for the dual-axis chart.
+  const monthly = await q(`SELECT to_char(m,'Mon YY') AS month,
+      COALESCE(SUM(i.qty),0)::int AS units, COALESCE(SUM(i.qty*i.price),0)::int AS sales
+    FROM generate_series(date_trunc('month', current_date) - interval '11 months', date_trunc('month', current_date), interval '1 month') m
+    LEFT JOIN orders o ON date_trunc('month', o.created_at) = m AND o.${OK}
+    LEFT JOIN order_items i ON i.order_id = o.id
+    GROUP BY m ORDER BY m`);
+  res.json({ totals, daily, status, top, category, monthly });
 });
 
 r.get('/refunds', async (req, res) => res.json(await q(

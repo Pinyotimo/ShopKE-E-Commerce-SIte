@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-export type Item = { id: number; name: string; price: number; was?: number; qty: number; image_url?: string };
+export type Item = { id: number; name: string; price: number; was?: number; qty: number; image_url?: string; stock?: number };
 
 const Ctx = createContext<any>(null);
 
@@ -11,8 +11,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   
   const add = (p: any, n = 1) =>
     set(s => s.some(i => i.id === p.id) 
-      ? s.map(i => i.id === p.id ? { ...i, qty: i.qty + n } : i)
-      : [...s, { id: p.id, name: p.name, price: p.price_now ?? p.price, was: p.price, image_url: p.image_url, qty: n }]
+      ? s.map(i => i.id === p.id ? { ...i, qty: i.qty + n, stock: p.stock ?? i.stock } : i)
+      : [...s, { id: p.id, name: p.name, price: p.price_now ?? p.price, was: p.price, image_url: p.image_url, stock: p.stock, qty: n }]
     );
     
   const setQty = (id: number, q: number) =>

@@ -4,11 +4,19 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { kes } from './api';
 
+// Light pill in light mode, soft translucent pill in dark mode.
+const AMBER = 'bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300';
+const SKY = 'bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-300';
+const ROSE = 'bg-rose-100 text-rose-800 dark:bg-rose-400/15 dark:text-rose-300';
+const GREY = 'bg-muted text-muted-foreground';
 const tone: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800', paid: 'bg-emerald-100 text-emerald-800', packed: 'bg-sky-100 text-sky-800',
-  out_for_delivery: 'bg-indigo-100 text-indigo-800', delivered: 'bg-green-100 text-green-800',
-  cancelled: 'bg-slate-200 text-slate-600', refunded: 'bg-rose-100 text-rose-800', requested: 'bg-amber-100 text-amber-800',
-  processing: 'bg-sky-100 text-sky-800', rejected: 'bg-slate-200 text-slate-600', failed: 'bg-rose-100 text-rose-800',
+  pending: AMBER, requested: AMBER,
+  paid: 'bg-emerald-100 text-emerald-800', // follows the palette
+  packed: SKY, processing: SKY,
+  out_for_delivery: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-400/15 dark:text-indigo-300',
+  delivered: 'bg-green-100 text-green-800 dark:bg-green-400/15 dark:text-green-300',
+  refunded: ROSE, failed: ROSE,
+  cancelled: GREY, rejected: GREY,
 };
 
 export const Status = ({ s }: { s: string }) => (

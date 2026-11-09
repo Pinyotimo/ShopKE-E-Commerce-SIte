@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Home, Info, LayoutDashboard, LayoutGrid, LogIn, LogOut, Menu, Package, Search as SearchIcon, ShoppingCart, Store, Truck, Zap } from 'lucide-react';
+import { Bell, Home, Info, LayoutDashboard, LayoutGrid, LogIn, LogOut, Menu, Package, Search as SearchIcon, ShoppingCart, Store, Truck, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../auth';
 import { useCart } from '../cart';
@@ -40,7 +40,7 @@ export default function Site() {
     ]],
     ['My account', [
       { to: '/cart', label: 'Cart', icon: ShoppingCart, badge: count },
-      ...(user ? [{ to: '/orders', label: 'My orders', icon: Package }] : []),
+      ...(user ? [{ to: '/orders', label: 'My orders', icon: Package }, { to: '/notifications', label: 'Notifications', icon: Bell }] : []),
       { to: '/track', label: 'Track an order', icon: Truck },
       ...(dash ? [{ to: dash, label: user!.role === 'admin' ? 'Owner dashboard' : 'Staff dashboard', icon: LayoutDashboard }] : []),
     ]],

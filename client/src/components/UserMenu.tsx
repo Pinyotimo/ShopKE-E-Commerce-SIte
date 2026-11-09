@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown, LayoutDashboard, LogOut, Package, User } from 'lucide-react';
+import { Bell, ChevronDown, LayoutDashboard, LogOut, Package, User } from 'lucide-react';
 import { useAuth } from '../auth';
 import { useOutside } from './useOutside';
 
@@ -28,6 +28,7 @@ export default function UserMenu() {
           <div className="my-1 h-px bg-border" />
           {dash && <button className={item} onClick={() => go(dash)}><LayoutDashboard className="h-4 w-4" />{user.role === 'admin' ? 'Owner dashboard' : 'Staff dashboard'}</button>}
           <button className={item} onClick={() => go('/orders')}><Package className="h-4 w-4" />My orders</button>
+          <button className={item} onClick={() => go('/notifications')}><Bell className="h-4 w-4" />Notifications</button>
           <div className="my-1 h-px bg-border" />
           <button className={`${item} text-rose-600`} onClick={() => { setOpen(false); logout(); nav('/'); }}><LogOut className="h-4 w-4" />Logout</button>
         </div>

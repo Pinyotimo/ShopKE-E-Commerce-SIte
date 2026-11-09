@@ -1,0 +1,142 @@
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { Check, Monitor, Moon, Palette, Sun } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+
+export const THEMES = {
+  emerald: { label: 'Emerald', brand: '#064e3b', accent: '#14b8a6' },
+  ocean: { label: 'Ocean', brand: '#2563eb', accent: '#0891b2' },
+  violet: { label: 'Violet', brand: '#7c3aed', accent: '#c026d3' },
+  rose: { label: 'Rose', brand: '#e11d48', accent: '#f97316' },
+  sunset: { label: 'Sunset', brand: '#ea580c', accent: '#d97706' },
+  slate: { label: 'Slate', brand: '#334155', accent: '#64748b' },
+} as const;
+type Color = keyof typeof THEMES;
+type Mode = 'light' | 'dark' | 'system';
+const Ctx = createContext<any>(null);
+const read = () => { try { return JSON.parse(localStorage.getItem('theme') || '{}'); } catch { return {}; } };
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const init = read();
+  const [color, setColor] = useState<Color>(init.color in THEMES ? init.color : 'emerald');
+  const [mode, setMode] = useState<Mode>(init.mode || 'system');
+  useEffect(() => {
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const dark = mode === 'dark' || (mode === 'system' && mq.matches);
+      const el = document.documentElement;
+      el.classList.toggle('dark', dark);
+      el.style.colorScheme = dark ? 'dark' : 'light';
+      el.style.setProperty('--brand', THEMES[color].brand);
+      el.style.setProperty('--accent2', THEMES[color].accent);
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    localStorage.setItem('theme', JSON.stringify({ color, mode }));
+    return () => mq.removeEventListener('change', apply);
+  }, [color, mode]);
+  return <Ctx.Provider value={{ color, setColor, mode, theme: mode, setMode, brand: THEMES[color].brand }}>{children}</Ctx.Provider>;
+}
+export const useTheme = () => useContext(Ctx) as {
+  color: Color; setColor: (c: Color) => void; mode: Mode; theme: Mode; setMode: (m: Mode) => void; brand: string;
+};
+
+export function ThemeSwitcher() {
+  const { color, setColor, mode, setMode } = useTheme();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: MouseEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', down);
+    document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key); };
+  }, [open]);
+
+  const toggleMode = () => {
+    setMode(mode === 'dark' ? 'light' : 'dark');
+  };
+
+  const modes: [Mode, any, string][] = [['light', Sun, 'Light'], ['dark', Moon, 'Dark'], ['system', Monitor, 'Auto']];
+
+  return (
+    <div ref={box} className="relative flex items-center gap-2">
+      <button
+        type="button"
+        aria-label="Toggle Theme"
+        onClick={toggleMode}
+        className="group relative grid h-10 w-10 place-items-center rounded-xl bg-muted transition-all duration-300 hover:bg-emerald-100 hover:text-emerald-700 hover:ring-4 hover:ring-emerald-500/10 active:scale-90"
+      >
+        <motion.div
+          initial={false}
+          animate={{ rotate: mode === 'dark' ? 180 : 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        >
+          {mode === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </motion.div>
+        <div className="absolute inset-0 rounded-xl bg-emerald-500/0 transition-colors group-hover:bg-emerald-500/10" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "grid h-8 w-8 place-items-center rounded-lg transition-all duration-300",
+          open ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" : "bg-muted text-muted-foreground hover:bg-emerald-100 hover:text-emerald-700"
+        )}
+        title="Custom Palette"
+      >
+        <Palette className="h-4 w-4" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-[100] mt-3 w-72 space-y-5 rounded-2xl border border-emerald-100 bg-popover/95 p-5 text-popover-foreground shadow-2xl backdrop-blur-xl">
+          <div className="relative">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Brand Palette</p>
+              <div className="h-1 w-12 rounded-full bg-emerald-200" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {(Object.keys(THEMES) as Color[]).map(k => (
+                <button key={k} type="button" onClick={() => setColor(k)}
+                  className={cn(
+                    'group flex flex-col items-center gap-2 rounded-xl border p-2 text-[11px] font-medium transition-all duration-200 hover:bg-muted',
+                    color === k ? 'border-emerald-500 bg-emerald-50/50 ring-1 ring-emerald-500' : 'border-transparent'
+                  )}>
+                  <span className="relative grid h-8 w-8 place-items-center rounded-full text-white shadow-md transition-transform group-hover:scale-110"
+                        style={{ background: `linear-gradient(135deg, ${THEMES[k].brand}, ${THEMES[k].accent})` }}>
+                    {color === k && <Check className="h-4 w-4 z-10" />}
+                  </span>
+                  <span className={cn("transition-colors", color === k ? "text-emerald-700 font-bold" : "text-slate-500")}>
+                    {THEMES[k].label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="pt-4 border-t border-emerald-50">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Mode</p>
+              <div className="h-1 w-12 rounded-full bg-emerald-200" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {modes.map(([m, I, l]) => (
+                <button key={m} type="button" onClick={() => setMode(m)}
+                  className={cn(
+                    'flex items-center justify-center gap-2 rounded-xl border px-2 py-2 text-xs font-bold transition-all duration-200',
+                    mode === m
+                      ? 'border-transparent bg-emerald-600 text-white shadow-md shadow-emerald-200'
+                      : 'border-emerald-100 bg-white text-slate-600 hover:bg-emerald-50 hover:border-emerald-200'
+                  )}>
+                  <I className="h-3.5 w-3.5" />
+                  <span>{l}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

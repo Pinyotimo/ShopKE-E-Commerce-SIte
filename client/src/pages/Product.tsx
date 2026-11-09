@@ -9,6 +9,7 @@ import { api } from '../api';
 import { useCart } from '../cart';
 import Countdown from '../components/Countdown';
 import ProductCard from '../components/ProductCard';
+import ProductGallery, { photosOf } from '../components/ProductGallery';
 import { Empty, Page, Price } from '../ui';
 
 export default function Product() {
@@ -38,8 +39,8 @@ export default function Product() {
         <span className="truncate text-foreground">{p.name}</span>
       </nav>
       <div className="grid gap-8 md:grid-cols-2">
-        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="aspect-square overflow-hidden rounded-2xl border bg-muted">
-          <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}>
+          <ProductGallery images={photosOf(p)} alt={p.name} />
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
           <span className="text-xs font-semibold uppercase tracking-wide text-emerald-600">{p.category}</span>
@@ -47,7 +48,7 @@ export default function Product() {
           <Price now={p.price_now} was={p.price} className="text-3xl" />
           {sale && p.sale_ends_at && <p className="flex items-center gap-1.5 text-sm font-semibold text-rose-600"><Timer className="h-4 w-4" />Sale ends in <Countdown to={p.sale_ends_at} /></p>}
           <p className={`text-sm font-medium ${out ? 'text-rose-600' : p.stock <= 5 ? 'text-amber-600' : 'text-emerald-600'}`}>{out ? 'Out of stock' : p.stock <= 5 ? `Only ${p.stock} left` : 'In stock'}</p>
-          <p className="text-muted-foreground">{p.description || 'No description yet.'}</p>
+          <p className="whitespace-pre-line leading-relaxed text-muted-foreground">{p.description || 'No description yet.'}</p>
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <div className="inline-flex items-center rounded-lg border">
               <Button variant="ghost" size="icon" disabled={qty <= 1} onClick={() => setQty(q => q - 1)}><Minus className="h-4 w-4" /></Button>
